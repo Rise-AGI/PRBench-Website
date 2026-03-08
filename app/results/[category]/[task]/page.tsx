@@ -13,28 +13,30 @@ import { Badge } from "@/components/ui/badge"
 import { ScoreBreakdown } from "@/components/score-breakdown"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 import { FileTree } from "@/components/file-tree"
+import { fetchSingleEvalReport } from "@/lib/github-api"
+import { getCachedResults } from "@/lib/cache"
 import type { EvalReport } from "@/lib/types"
 
 // Revalidate every hour
 export const revalidate = 3600
 
 async function fetchSingleReport(
-  category: string,
+  category: "code_only" | "full_codex",
   task: string
 ): Promise<EvalReport | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-    const res = await fetch(`${baseUrl}/api/results/${category}/${task}`, {
-      cache: "force-cache",
-      next: { revalidate: 3600 },
-    })
-
-    if (!res.ok) {
-      return null
+    // Try to get from cache first
+    const cached = await getCachedResults()
+    if (cached) {
+      const reports = category === "code_only" ? cached.code_only : cached.full_codex
+      const report = reports.find((r) => r.task_id === task)
+      if (report) {
+        return report
+      }
     }
 
-    const json = await res.json()
-    return json.data
+    // Cache miss - fetch from GitHub
+    return await fetchSingleEvalReport(category, task)
   } catch (error) {
     console.error("Error fetching single report:", error)
     return null
@@ -62,6 +64,11 @@ export default async function TaskDetailPage({
   params: Promise<{ category: string; task: string }>
 }) {
   const { category, task } = await params
+
+  // Validate category
+  if (category !== "code_only" && category !== "full_codex") {
+    notFound()
+  }
 
   // Fetch only the single report we need
   const report = await fetchSingleReport(category, task)
