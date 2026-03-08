@@ -21,6 +21,9 @@
 # misc
 .DS_Store
 *.pem
+._*
+Agents.md
+agents.md
 
 # debug
 npm-debug.log*
@@ -30,6 +33,7 @@ pnpm-debug.log*
 
 # env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
