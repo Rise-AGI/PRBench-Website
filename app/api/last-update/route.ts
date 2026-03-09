@@ -2,7 +2,9 @@ import { NextResponse } from "next/server"
 import { getLatestCommitDate } from "@/lib/github-api"
 import { getCachedLastUpdate, setCachedLastUpdate } from "@/lib/cache"
 
-export const revalidate = 3600 // Revalidate every hour
+// Force dynamic rendering - no static optimization
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 export async function GET() {
   try {

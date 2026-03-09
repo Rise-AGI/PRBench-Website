@@ -2,8 +2,9 @@ import { NextResponse } from "next/server"
 import { fetchSingleEvalReport } from "@/lib/github-api"
 import { getCachedResults } from "@/lib/cache"
 
-// Revalidate every hour
-export const revalidate = 3600
+// Force dynamic rendering - no static optimization
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 export async function GET(
   request: Request,
@@ -28,7 +29,7 @@ export async function GET(
           { data: report, cached: true },
           {
             headers: {
-              "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
             },
           }
         )
@@ -46,7 +47,7 @@ export async function GET(
       { data: report, cached: false },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       }
     )

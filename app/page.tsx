@@ -27,12 +27,13 @@ export default function Page() {
   }, [])
 
   const formattedDate = lastUpdate
-    ? new Date(lastUpdate).toLocaleString("en-US", {
+    ? new Date(lastUpdate).toLocaleString(undefined, {
         year: "numeric",
         month: "short",
         day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
+        timeZoneName: "short",
       })
     : null
 

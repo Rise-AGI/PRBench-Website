@@ -3,8 +3,9 @@ import { fetchAllEvalReports, getRateLimit } from "@/lib/github-api"
 import { getCachedResults, setCachedResults } from "@/lib/cache"
 import type { AllResults } from "@/lib/types"
 
-// Revalidate every hour
-export const revalidate = 3600
+// Force dynamic rendering - no static optimization
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 export async function GET() {
   const encoder = new TextEncoder()
@@ -138,7 +139,7 @@ export async function GET() {
   return new NextResponse(stream, {
     headers: {
       "Content-Type": "application/x-ndjson",
-      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
       Connection: "keep-alive",
     },
   })

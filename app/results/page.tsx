@@ -7,11 +7,14 @@ import { ResultsLoadingGrid } from "@/components/loading-skeletons"
 import { ProgressBar, PulseDots } from "@/components/loading-indicators"
 import type { EvalReport } from "@/lib/types"
 
-// Client-side cache for results
+// Client-side cache for results with timestamp
 let cachedResults: {
   codeOnly: EvalReport[]
   fullCodex: EvalReport[]
+  timestamp: number
 } | null = null
+
+const CACHE_DURATION = 60 * 60 * 1000 // 1 hour in milliseconds
 
 function calculateStats(reports: EvalReport[]) {
   if (reports.length === 0) return { total: 0, avgScore: 0 }
@@ -39,13 +42,22 @@ export default function ResultsPage() {
   const totalExpected = 31 // Expected total reports
 
   useEffect(() => {
-    // Check if we have cached results
+    // Check if we have cached results and they're still fresh
     if (cachedResults) {
-      setCodeOnlyReports(cachedResults.codeOnly)
-      setFullCodexReports(cachedResults.fullCodex)
-      setLoading(false)
-      setInitialLoadComplete(true)
-      return
+      const now = Date.now()
+      const cacheAge = now - cachedResults.timestamp
+
+      if (cacheAge < CACHE_DURATION) {
+        console.log(`Using cached results (age: ${Math.round(cacheAge / 1000)}s)`)
+        setCodeOnlyReports(cachedResults.codeOnly)
+        setFullCodexReports(cachedResults.fullCodex)
+        setLoading(false)
+        setInitialLoadComplete(true)
+        return
+      } else {
+        console.log(`Cache expired (age: ${Math.round(cacheAge / 1000)}s), fetching fresh data`)
+        cachedResults = null
+      }
     }
 
     // Prevent double fetch in development (React StrictMode)
@@ -55,8 +67,9 @@ export default function ResultsPage() {
     async function fetchResultsStreaming() {
       try {
         // Use relative URL - works in both dev and production
+        // Use no-cache to ensure fresh data after cache expiration
         const res = await fetch("/api/results/stream", {
-          cache: "force-cache", // Use browser cache
+          cache: "no-store",
         })
 
         if (!res.ok) {
@@ -100,8 +113,12 @@ export default function ResultsPage() {
                 } else if (data.type === "complete") {
                   setLoading(false)
                   setInitialLoadComplete(true)
-                  // Cache the results
-                  cachedResults = { codeOnly, fullCodex }
+                  // Cache the results with timestamp
+                  cachedResults = {
+                    codeOnly,
+                    fullCodex,
+                    timestamp: Date.now(),
+                  }
                 }
               } catch (e) {
                 console.error("Error parsing JSON:", e)
