@@ -2,6 +2,7 @@ import { kv } from "@vercel/kv"
 import type { AllResults } from "./types"
 
 const CACHE_KEY = "prbench:eval-reports"
+const LAST_UPDATE_CACHE_KEY = "prbench:last-update"
 const CACHE_TTL = 3600 // 1 hour in seconds
 
 // Check if KV is available (environment variables are set)
@@ -84,5 +85,40 @@ export async function getCacheMetadata() {
   } catch (error) {
     console.error("Error getting cache metadata:", error)
     return { exists: false, ttl: -1, expiresAt: null, kvAvailable: true }
+  }
+}
+
+/**
+ * Get cached last update timestamp
+ */
+export async function getCachedLastUpdate(): Promise<string | null> {
+  if (!isKVAvailable()) {
+    console.log("KV cache not available (missing environment variables)")
+    return null
+  }
+
+  try {
+    const cached = await kv.get<string>(LAST_UPDATE_CACHE_KEY)
+    return cached
+  } catch (error) {
+    console.error("Error reading last update from cache:", error)
+    return null
+  }
+}
+
+/**
+ * Set cached last update timestamp
+ */
+export async function setCachedLastUpdate(timestamp: string): Promise<void> {
+  if (!isKVAvailable()) {
+    console.log("KV cache not available, skipping last update cache write")
+    return
+  }
+
+  try {
+    await kv.set(LAST_UPDATE_CACHE_KEY, timestamp, { ex: CACHE_TTL })
+    console.log(`Cached last update timestamp: ${timestamp}`)
+  } catch (error) {
+    console.error("Error writing last update to cache:", error)
   }
 }

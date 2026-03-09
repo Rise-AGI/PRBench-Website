@@ -212,3 +212,26 @@ export async function getRateLimit() {
     return null
   }
 }
+
+/**
+ * Get the latest commit timestamp from the results directory
+ */
+export async function getLatestCommitDate(): Promise<string | null> {
+  try {
+    const { data } = await octokit.rest.repos.listCommits({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      path: RESULTS_PATH,
+      per_page: 1,
+    })
+
+    if (data.length > 0 && data[0].commit.author?.date) {
+      return data[0].commit.author.date
+    }
+
+    return null
+  } catch (error) {
+    console.error("Error fetching latest commit:", error)
+    return null
+  }
+}

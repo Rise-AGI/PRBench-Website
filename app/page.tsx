@@ -1,8 +1,41 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export default function Page() {
+  const [lastUpdate, setLastUpdate] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchLastUpdate() {
+      try {
+        const res = await fetch("/api/last-update")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.timestamp) {
+            setLastUpdate(data.timestamp)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching last update:", error)
+      }
+    }
+
+    fetchLastUpdate()
+  }, [])
+
+  const formattedDate = lastUpdate
+    ? new Date(lastUpdate).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null
+
   return (
     <div className="flex min-h-svh items-center justify-center p-6">
       <div className="flex max-w-2xl flex-col gap-8 text-center">
@@ -41,8 +74,11 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="mt-4 font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
+        <div className="mt-4 space-y-1 font-mono text-xs text-muted-foreground">
+          {formattedDate && <div>Last update: {formattedDate}</div>}
+          <div>
+            (Press <kbd>d</kbd> to toggle dark mode)
+          </div>
         </div>
       </div>
     </div>
